@@ -58,6 +58,8 @@ public class WeatherActivity extends AppCompatActivity {
     private String mWeatherId;
     SwipeRefreshLayout swipeRefreshLayout;  //下拉刷新
     DrawerLayout drawerLayout;  //滑动菜单
+    private String cityId;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,10 +99,9 @@ public class WeatherActivity extends AppCompatActivity {
 
         //获得MainActivity传过来的经纬度
         Intent intent = getIntent();
-        String longitude = intent.getStringExtra("longitude");
-        String latitude = intent.getStringExtra("latitude");
-        requestCID(longitude,latitude);  //获得城市的编号
-
+        String longitude = intent.getStringExtra("longitude");  //经度
+        String latitude = intent.getStringExtra("latitude");  //纬度
+        requestWeatherId(longitude,latitude);
 
         String weatherString = prefs.getString("weather",null);
         if(weatherString != null){  //如果有weather缓存
@@ -109,9 +110,8 @@ public class WeatherActivity extends AppCompatActivity {
             showWeatherInfo(weather);  //将信息显示在界面上
         }
         else{  //没有weather缓存
-            mWeatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
-            requestWeather(mWeatherId);  //向服务器请求weather数据
+            requestWeatherId(longitude,latitude);  //向服务器请求weatherId
         }
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {  //设置下拉刷新的方法
@@ -130,17 +130,20 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
 
-    public void requestCID(String longitude,String latitude){
+    public void requestWeatherId (String longitude,String latitude){
         String url = "https://free-api.heweather.net/s6/weather/now?location=" + longitude + "," + latitude +"&key=57a1dfcb705644dd916fa7b71c3d5787";
         HttpUtil.sendOkHttpRequest(url, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-
+                Toast.makeText(WeatherActivity.this, "获取weatherId失败", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-
+                String responseText = response.body().string();
+                Weather weather = Utility.handleWeatherId(responseText);
+                mWeatherId = weather.basic.weatherId;
+                requestWeather(mWeatherId);
             }
         });
     }
@@ -148,7 +151,6 @@ public class WeatherActivity extends AppCompatActivity {
 
     public void requestWeather(final String weatherId){  //向服务器请求天气数据
         String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=bc0418b57b2d4918819d3974ac1285d9";
-        //String weatherUrl = "https://api.heweather.net/s6/weather?cityid="+ weatherId + "&key=57a1dfcb705644dd916fa7b71c3d5787";  //在这里填写api的接口
         HttpUtil.sendOkHttpRequest(weatherUrl,new okhttp3.Callback(){
             @Override
             public void onFailure(Call call, IOException e) {

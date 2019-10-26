@@ -84,18 +84,23 @@ public class ChooseAreaFragment extends Fragment {
                 }
                 else if(currentLevel == COUNTY_LEVEL){
                     String weatherId = countyList.get(position).getWeatherId();
-                    if(getActivity() instanceof MainActivity){  //当碎片在MainActivity中时
+                    WeatherActivity activity = (WeatherActivity)getActivity();  //获得activity里面的实例，然后直接调用里面的方法
+                    activity.drawerLayout.closeDrawers();
+                    activity.swipeRefreshLayout.setRefreshing(true);
+                    activity.requestWeather(weatherId);
+
+                    /*if(getActivity() instanceof MainActivity){  //当碎片在MainActivity中时
                         Intent intent = new Intent(getActivity(),WeatherActivity.class);
                         intent.putExtra("weather_id",weatherId);
                         startActivity(intent);
                         getActivity().finish();
                     }
-                    else if(getActivity() instanceof WeatherActivity){  //当碎片在WeatherActivity中时
+                    if(getActivity() instanceof WeatherActivity){  //当碎片在WeatherActivity中时
                         WeatherActivity activity = (WeatherActivity)getActivity();  //获得activity里面的实例，然后直接调用里面的方法
                         activity.drawerLayout.closeDrawers();
                         activity.swipeRefreshLayout.setRefreshing(true);
                         activity.requestWeather(weatherId);
-                    }
+                    }*/
                 }
             }
         });
@@ -120,6 +125,7 @@ public class ChooseAreaFragment extends Fragment {
         back.setVisibility(View.GONE);
         provinceList = LitePal.findAll(Province.class);
         if(provinceList.size()>0){  //如果数据库里面不为空
+            Log.d("!!!!!!!!!!!!!!!!!!!!!:", String.valueOf(provinceList.size()));
             dataList.clear();
             for(Province province : provinceList){
                 dataList.add(province.getProvinceName());

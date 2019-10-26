@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
@@ -29,9 +30,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);  //先加载碎片，选择列表
-        showProgress();  //展示加载圈
+
         mLocationClient = new LocationClient(getApplicationContext());
         mLocationClient.registerLocationListener(new MyLocationListener());
+
         List<String> permissionsList = new ArrayList<>();  //权限列表
         if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             permissionsList.add(Manifest.permission.ACCESS_FINE_LOCATION);
@@ -50,12 +52,6 @@ public class MainActivity extends AppCompatActivity {
             requestLocation();
         }
         closeProgress();  //关闭加载圈
-
-        /*SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-        if(pref.getString("weather",null) != null){  //之前已经请求过数据，就不用再选择界面了
-            Intent intent = new Intent(this,WeatherActivity.class);
-            startActivity(intent);
-        }*/
     }
 
 
@@ -92,7 +88,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onReceiveLocation(final BDLocation bdLocation) {
-            longitude = String.valueOf(bdLocation.getLatitude());  //获得经度
+            showProgress();  //展示加载圈
+            longitude = String.valueOf(bdLocation.getLongitude());  //获得经度
             latitude = String.valueOf(bdLocation.getLatitude());  //获得纬度
             closeProgress();
         }
@@ -111,11 +108,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void closeProgress(){
         if(progressDialog != null){
+            progressDialog.dismiss();
             Intent intent = new Intent(MainActivity.this,WeatherActivity.class);
             intent.putExtra("longitude",longitude);
             intent.putExtra("latitude",latitude);
-            //startActivity(intent);
-            progressDialog.dismiss();
+            startActivity(intent);
+            finish();
         }
     }
 }
