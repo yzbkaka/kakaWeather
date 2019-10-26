@@ -3,10 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-  <fragment
+  <!--<fragment
       android:id="@+id/choose_area_fragment"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      android:name="com.example.yzbkaka.kakaweather.ChooseAreaFragment"/>
+      android:name="com.example.yzbkaka.kakaweather.ChooseAreaFragment"/>-->
 
 </FrameLayout>

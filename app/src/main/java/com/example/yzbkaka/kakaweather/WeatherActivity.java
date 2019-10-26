@@ -1,5 +1,6 @@
 package com.example.yzbkaka.kakaweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -94,6 +95,13 @@ public class WeatherActivity extends AppCompatActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         Glide.with(this).load("https://api.dujin.org/bing/1920.php").into(bingPicImg);  //使用Glide框架将图片加载到背景中
 
+        //获得MainActivity传过来的经纬度
+        Intent intent = getIntent();
+        String longitude = intent.getStringExtra("longitude");
+        String latitude = intent.getStringExtra("latitude");
+        requestCID(longitude,latitude);  //获得城市的编号
+
+
         String weatherString = prefs.getString("weather",null);
         if(weatherString != null){  //如果有weather缓存
             Weather weather = Utility.handleWeatherResponse(weatherString);  //对数据进行解析
@@ -117,6 +125,22 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+    }
+
+
+    public void requestCID(String longitude,String latitude){
+        String url = "https://free-api.heweather.net/s6/weather/now?location=" + longitude + "," + latitude +"&key=57a1dfcb705644dd916fa7b71c3d5787";
+        HttpUtil.sendOkHttpRequest(url, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+
             }
         });
     }
