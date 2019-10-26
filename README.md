@@ -17,3 +17,6 @@
 [baidu sdk](http://lbsyun.baidu.com/)
 
 # 下载安装
+
+![扫码下载](https://upload-images.jianshu.io/upload_images/12070003-e4ad7ec8235dfe00.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
