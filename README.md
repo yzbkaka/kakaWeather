@@ -3,6 +3,8 @@
 
 # kakaWeather概括
 
+![概括](https://upload-images.jianshu.io/upload_images/12070003-d35ba63045cbc916.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 # 依赖
 [Litepal](https://github.com/LitePalFramework/LitePal)
 
