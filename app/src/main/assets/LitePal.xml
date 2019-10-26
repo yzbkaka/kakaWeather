@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<litepal>
+    <dbname value="kaka_weather"></dbname>
+    <version value="2"></version>
+
+    <list>
+        <mapping class = "com.example.yzbkaka.kakaweather.db.Province" />
+        <mapping class = "com.example.yzbkaka.kakaweather.db.City"/>
+        <mapping class = "com.example.yzbkaka.kakaweather.db.County"/>
+    </list>
+</litepal>
