@@ -1,16 +1,19 @@
 package com.example.yzbkaka.kakaweather;
 
-import android.content.Intent;
+import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -20,14 +23,18 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
 import com.bumptech.glide.Glide;
 import com.example.yzbkaka.kakaweather.GSON.Forecast;
 import com.example.yzbkaka.kakaweather.GSON.Weather;
-import com.example.yzbkaka.kakaweather.service.AutoUpdateService;
 import com.example.yzbkaka.kakaweather.util.HttpUtil;
 import com.example.yzbkaka.kakaweather.util.Utility;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -35,42 +42,111 @@ import okhttp3.Response;
 
 
 public class WeatherActivity extends AppCompatActivity {
-    //weather
-    private ScrollView weatherLayout;  //天气预报的总体界面
-    private ImageView bingPicImg;  //bing的图片
-    //top_view
-    private Button navButton;  //显示菜单的按钮
-    private TextView titleCity;  //上方显示的城市名
-    private TextView time;  //右上方显示的更新时间
-    //now
-    private TextView degreeText;  //显示的温度
-    private TextView weatherInfoText;  //显示的天气状况
-    //forecast
-    private LinearLayout forecastLayout;  //显示之后几天预测的天气
-    //aqi
-    private TextView aqiText;  //显示aqi指数
-    private TextView pm25Text;  //显示pm2.5指数
-    //suggestion
-    private TextView comfortText;  //显示舒适建议
-    private TextView carWashText;  //显示洗车的建议
-    private TextView sportText;  //显示运动的建议
-    //other
+
+    private ProgressDialog progressDialog;
+
+    /**
+     * sdk定位服务器
+     */
+    public LocationClient mLocationClient;
+
+    /**
+     * 天气预报的总体界面
+     */
+    private ScrollView weatherLayout;
+
+    /**
+     * bing的图片
+     */
+    private ImageView bingPicImg;
+
+    /**
+     * 显示菜单的按钮
+     */
+    private Button navButton;
+
+    /**
+     * 上方显示的城市名
+     */
+    private TextView titleCity;
+
+    /**
+     * 右上方显示的更新时间
+     */
+    private TextView time;
+
+    /**
+     * 显示的温度
+     */
+    private TextView degreeText;
+
+    /**
+     * 显示的天气状况
+     */
+    private TextView weatherInfoText;
+
+    /**
+     * 显示之后几天预测的天气
+     */
+    private LinearLayout forecastLayout;
+
+    /**
+     * 显示aqi指数
+     */
+    private TextView aqiText;
+
+    /**
+     * 显示pm2.5指数
+     */
+    private TextView pm25Text;
+
+    /**
+     * 显示舒适建议
+     */
+    private TextView comfortText;
+
+    /**
+     * 显示洗车的建议
+     */
+    private TextView carWashText;
+
+    /**
+     * 显示运动的建议
+     */
+    private TextView sportText;
+
     private String mWeatherId;
-    SwipeRefreshLayout swipeRefreshLayout;  //下拉刷新
-    DrawerLayout drawerLayout;  //滑动菜单
-    private String cityId;
+
+    /**
+     * 经度
+     */
+    private String longitude;
+
+    /**
+     * 纬度
+     */
+    private String latitude;
+
+    SwipeRefreshLayout swipeRefreshLayout;
+
+    DrawerLayout drawerLayout;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_weater);
-
-        if(Build.VERSION.SDK_INT >= 21){  //将状态栏与背景融合在一起
-            View doctorView = getWindow().getDecorView();
-            doctorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN  | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        if (Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
+        setContentView(R.layout.activity_weater);
+        showProgress();
+
+        mLocationClient = new LocationClient(getApplicationContext());
+        mLocationClient.registerLocationListener(new MyLocationListener());  //注册定位器
+
+        requestNeedPermissions();
 
         titleCity = (TextView)findViewById(R.id.title_city);
         time = (TextView)findViewById(R.id.update_time);
@@ -95,13 +171,8 @@ public class WeatherActivity extends AppCompatActivity {
 
         //获得bing图片作为背景
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        weatherLayout.setVisibility(View.INVISIBLE);
         Glide.with(this).load("https://api.dujin.org/bing/1920.php").into(bingPicImg);  //使用Glide框架将图片加载到背景中
-
-        //获得MainActivity传过来的经纬度
-        Intent intent = getIntent();
-        String longitude = intent.getStringExtra("longitude");  //经度
-        String latitude = intent.getStringExtra("latitude");  //纬度
-        requestWeatherId(longitude,latitude);
 
         String weatherString = prefs.getString("weather",null);
         if(weatherString != null){  //如果有weather缓存
@@ -129,7 +200,67 @@ public class WeatherActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * 获得所需要的权限
+     */
+    public void requestNeedPermissions(){
+        List<String> permissionsList = new ArrayList<>();
+        if(ContextCompat.checkSelfPermission(WeatherActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            permissionsList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if(ContextCompat.checkSelfPermission(WeatherActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED){
+            permissionsList.add(Manifest.permission.READ_PHONE_STATE);
+        }
+        if(ContextCompat.checkSelfPermission(WeatherActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            permissionsList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if(!permissionsList.isEmpty()){
+            String[] permissions = permissionsList.toArray(new String[permissionsList.size()]);
+            ActivityCompat.requestPermissions(WeatherActivity.this,permissions,1);
+        }
+        else{
+            mLocationClient.start();  //启动定位器
+        }
+    }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+        switch (requestCode){
+            case 1:
+                if(grantResults.length > 0){
+                    for(int result : grantResults){
+                        if(result != PackageManager.PERMISSION_DENIED){
+                            Toast.makeText(this, "必须同意所有权限才能使用本程序", Toast.LENGTH_SHORT).show();
+                            finish();
+                            return;
+                        }
+                    }
+                    mLocationClient.start();
+                }
+                else{
+                    Toast.makeText(this, "发生未知错误", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+                break;
+            default:
+        }
+    }
+
+    public class MyLocationListener implements BDLocationListener {
+        @Override
+        public void onReceiveLocation(final BDLocation bdLocation) {
+            longitude = String.valueOf(bdLocation.getLongitude());  //获得经度
+            latitude = String.valueOf(bdLocation.getLatitude());  //获得纬度
+            Toast.makeText(WeatherActivity.this, "定位成功", Toast.LENGTH_SHORT).show();
+            closeProgress();
+        }
+    }
+
+    /**
+     * 根据经纬度获得weatherId
+     * @param longitude
+     * @param latitude
+     */
     public void requestWeatherId (String longitude,String latitude){
         String url = "https://free-api.heweather.net/s6/weather/now?location=" + longitude + "," + latitude +"&key=57a1dfcb705644dd916fa7b71c3d5787";
         HttpUtil.sendOkHttpRequest(url, new Callback() {
@@ -148,8 +279,11 @@ public class WeatherActivity extends AppCompatActivity {
         });
     }
 
-
-    public void requestWeather(final String weatherId){  //向服务器请求天气数据
+    /**
+     * 向服务器请求天气数据
+     * @param weatherId
+     */
+    public void requestWeather(final String weatherId){
         String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=bc0418b57b2d4918819d3974ac1285d9";
         HttpUtil.sendOkHttpRequest(weatherUrl,new okhttp3.Callback(){
             @Override
@@ -187,8 +321,11 @@ public class WeatherActivity extends AppCompatActivity {
         });
     }
 
-
-    public void showWeatherInfo(Weather weather){  //将天气数据显示在界面上
+    /**
+     * 将天气数据显示在界面上
+     * @param weather
+     */
+    public void showWeatherInfo(Weather weather){
         String cityName = weather.basic.cityName;
         String updateTime = weather.basic.update.updateTime.split(" ")[1];
         String degree = weather.now.temperature + "℃";
@@ -221,5 +358,27 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText.setText(carWash);
         sportText.setText(sport);
         weatherLayout.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * 展示加载圈
+     */
+    public void showProgress(){
+        if(progressDialog == null){
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("正在定位中...");
+            progressDialog.setCancelable(false);
+        }
+        progressDialog.show();
+    }
+
+    /**
+     * 关闭加载圈
+     */
+    public void closeProgress(){
+        if(progressDialog != null){
+            requestWeatherId(longitude,latitude);
+            progressDialog.dismiss();
+        }
     }
 }

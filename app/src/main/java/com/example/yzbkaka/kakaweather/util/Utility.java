@@ -17,8 +17,15 @@ import org.json.JSONObject;
  */
 
 
-//完成对服务器返回过来的GSON数据的解析
+/**
+ * 完成对服务器返回过来的GSON数据的解析
+ */
 public class Utility {
+
+    /**
+     * 解析省份数据
+     * @param response
+     */
     public static boolean handleProvinceResponse(String response){
         if(!TextUtils.isEmpty(response)){
             try{
@@ -38,7 +45,11 @@ public class Utility {
         return false;
     }
 
-
+    /**
+     * 解析城市数据
+     * @param response
+     * @param provinceId
+     */
     public static boolean handleCityResponse(String response,int provinceId){
         if(!TextUtils.isEmpty(response)){
             try{
@@ -59,7 +70,11 @@ public class Utility {
         return false;
     }
 
-
+    /**
+     * 解析县数据
+     * @param response
+     * @param cityId
+     */
     public static boolean handleCountyResponse(String response,int cityId){
         if(!TextUtils.isEmpty(response)){
             try{
@@ -80,7 +95,10 @@ public class Utility {
         return false;
     }
 
-
+    /**
+     * 解析天气数据
+     * @param response
+     */
     public static Weather handleWeatherResponse(String response){
         try{
             JSONObject jsonObject = new JSONObject(response);
@@ -93,7 +111,10 @@ public class Utility {
         return null;
     }
 
-
+    /**
+     * 根据经纬度获得weatherId
+     * @param response
+     */
     public static Weather handleWeatherId(String response){
         try{
             JSONObject jsonObject = new JSONObject(response);
